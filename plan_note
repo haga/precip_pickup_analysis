@@ -1,0 +1,78 @@
+
+1) need a document to describe the binning of the data
+
+binning data by region
+formatting to gnuplot collumns by temp and region
+fitting precip pickups to find wc
+writing out fit parameters: w_c, a
+plotting
+	precip-cwv pickup with fit lines and wc
+	plot of temp vs Wc & Qsathat
+	precip pick up collapse with normalization
+        number precipitating with gaussian fits
+	variance of precipitation
+
+regions
+
+
+First run 'bin_ccsm.m'.  Matlab script which reads in global values of precip, column water vapor, column saturation, and Tropospheric temperature.  The method of vertically averaging and format is found in @cite script passed from Sandeep from Richard Neale.) 
+
+
+Steps:
+1) preprocess input data
+
+The model output netcdf files are produced by script gen_6hrly.ncl 
+(a copy included here for reference, author: R.Neale).   In this version of the analysis, 
+the netcdf file are rewritten to .mat format files before running the analysis script, so those details 
+are included.  Of course, can skip this step if read netcdf files directly into analysis script.  
+
+If  with GrADS and written out
+as ascii files.  Then the ascii files are read in by MATLAB and written out as .mat files.  These pre-
+processing steps are an artifact of software limitations early on in this analysis.  Currently, can 
+use netcdf tools in MATLAB to read in the model output directly.  
+I've included this step since the binning script (step 2) reads in an annual .mat file for each variable, which
+is set up in the pre-processing.
+This sets up the input data in to directory named 'CCSM_MAT' with file names of VAR_year.
+
+2) bin data
+This step runs the MATLAB script 'bin.m'.  In directory with 'bin.m' need
+regions.mat. This is .mat file that defines the desired region on same grid resolution as model data.  
+Here uses tropical ocean basins, 20N-20S, 
+excluding land points with 1-Western Pacific, 2-Easter Pacific, 3-Atlantic, 4-Indian, 0-other).  To use 
+different regions, modify/replace regions.mat. 
+Also in directory with 'bin.m', need directory of model data input files in annual .mat file format 
+named e.g. 'CCSM_MAT/PREC_1992.mat' (from step 1).
+
+To run bin.m there are several parameters that can be modified in the script. The defaults and descriptions are
+in comments in the script.
+
+Bin.m will produce binned data in two formats: matlab .mat file of the main array containing the binned data
+and column ascii files formatted for analysis/plotting with gnuplot (one file per region and temperature bin).
+
+3) quick look at data as needed
+For most experiments, the default values are likely sufficient.  However, we currently take a quick look at the
+temperature-precip bins to see the most populous temperature bins to find the appropriate range of temperature-
+bins to plot.  Our plan is to automate this step by selecting the most populous temperature-bin and from that
+value, include 2 temperature-bins less than it and 4 greater than it as a general guide.
+
+4) calculate the 'restricted-range-fit'
+The output of the binning will produce column ascii files ready for analysis/plotting with gnuplot.  This
+step runs the gnuplot script fit.gs for the selected region and temperature-bins (set parameters in fit.gs).  
+The script calculates
+the least squares fit for P(CWV,T) over the range of precipitaion from 2.5mm/h to 6.0mm/h with a minimum
+of 3 points and over a maximum range of CWV of 5mm [note, the minimum point requirement as been implemented
+case-by-case so far and is not currently coded in the script].  
+The script saves the calculated critical values and 
+amplitudes into files in directory 'critical_values' and also plots the precipitation pickups and fits.
+
+An alternate fitting method is included in script @alternate_fit.gs.  This requires more consideration of 
+parameter selection on a case by case basis.  This is the method used in @@refs.
+
+5) plot figures
+There are separate scripts for each of the three main figures:
+	1) pickup.gs: plots pickup of precipitation vs cwv for the temperatures selected along with the restricted range fit lines
+	2) wc_qsh.gs: plots critical water vapor values and saturation values vs temperature
+	3) num_precip.gs: plots number precipitating with Gaussian fits for the selected temperature bins
+
+Each script has parameters to change as needed for selected region, dataset.
+
