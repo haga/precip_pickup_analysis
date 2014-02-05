@@ -1,5 +1,14 @@
-% Set up some parameter values:
-% resolution of data
+%%---------------------------------------------------------
+%% Original code: Ole Peters 2008-2009
+%% Modifications: Katrina Hales 2009-January 2014
+%% Scientific supervision: J David Neelin
+%% For related publications and research information see
+%%   the Neelin group webpage  http://www.atmos.ucla.edu/~csi/
+%%---------------------------------------------------------
+
+%%% Set parameter values: 
+
+%resolution of data
 xres=288
 yres=192
 
@@ -29,32 +38,38 @@ PrecMoments=5;
 BIN=zeros(number_regions,number_T_bins,number_cwv_bins,PrecMoments);
 QSH=zeros(number_regions,number_T_bins,2);
 
-% The data read in here is preprocessed into annual files, one for each year of each of the variables:
-% (see script @@ from R.Neale for calculation/output of these variables)
-% Precip (in units of mm/day) 	(PRECT - Total precipitation)
-% Temperature (in K) 		(TAV200 -Average temperature up to 200mb)
-% Column water vapor (in mm) 	(TMQ200 - Precipitable (vertically integrated) water up to 200mb)
-% Column saturation 		(TMQS200 - Vertically integrated saturated water vapor up to 200mb)
+% The data read in here is preprocessed into annual files, one for each year of each of the variables
+% (see script gen_6hrly.ncl from R.Neale for calculation/output of these variables)
+% Precip (mm/day)	 	(PRECT - Total precipitation)
+% Temperature (K) 		(TAV200 -Average temperature up to 200mb)
+% Column water vapor (kg/m2) 	(TMQ200 - Precipitable (vertically integrated) water up to 200mb)
+% Column saturation (kg/m2)	(TMQS200 - Vertically integrated saturated water vapor up to 200mb)
 
-% (Note regarding preprocessing.  Generally, is more efficient to read in the netcdf files of the model output directly.
-% This script was developed when it was most efficient for me to preprocess the data. To read directly, @what 
-% need to do?  
+% (Note regarding preprocessing: This script was developed when it was most 
+% efficient to preprocess the data. To read the netcdf model output files directly, can use
+% ncread and related tools in MATLAB (see eg http://www.mathworks.com/help/matlab/ref/ncread.html).)
 
 % Set startyear and endyear for data range, 
 % this starts with 00Z01Jan of startyear and ends 18Z31Dec of endyear
-startyear=2081;
-endyear=2100;
+startyear=1981;
+endyear=2000;
+% create directory for output
+!mkdir ../FIT_and_PLOT/GNUPLOTready1981_2000
+
+%%% End set parameter section 
+
+
 for year=startyear:endyear
 
 % Read in preprocessed data
-temp_filename=sprintf('./CCSM_MAT/PREC_%s',num2str(year))
-load(temp_filename)  % loads 'prec'
-temp_filename=sprintf('./CCSM_MAT/TEMP_%s',num2str(year))
-load(temp_filename)  % loads 'tave'
-temp_filename=sprintf('./CCSM_MAT/CWV_%s',num2str(year))
-load(temp_filename)  % loads 'cwv'
-temp_filename=sprintf('./CCSM_MAT/QSAT_%s',num2str(year))
-load(temp_filename)  % loads 'qsat'
+temp_filename=sprintf('../INPUT_DATA/CCSM_MAT/PREC_%s',num2str(year))
+load(temp_filename)  % loads 'prec'  Total precipitation
+temp_filename=sprintf('../INPUT_DATA/CCSM_MAT/TEMP_%s',num2str(year))
+load(temp_filename)  % loads 'tave'  Column Temperature
+temp_filename=sprintf('../INPUT_DATA/CCSM_MAT/CWV_%s',num2str(year))
+load(temp_filename)  % loads 'cwv'  Column water vapor
+temp_filename=sprintf('../INPUT_DATA/CCSM_MAT/QSAT_%s',num2str(year))
+load(temp_filename)  % loads 'qsat'  Column saturation
 
 for day=1:365 %does not account for leap years; the data I have been looking at has 365day years
 for hour=1:4
@@ -68,7 +83,8 @@ reg=uint16(region(i,j));
 %TROPOSPHERIC AVERAGE TEMPERATURE
 temp=uint16(tave(i,j,day,hour)-Toffset); 
 
-%CWV %no offset and one bin per 0.5 mm is default, adjust 'cwv_bin_size' above to change
+%COLUMN WATER VAPOR
+%no offset and one bin per 0.5 mm is default, adjust 'cwv_bin_size' above to change
 vapor_index=uint16(round(cwv(i,j,day,hour)/cwv_bin_size));
 
 %PRECIPITATION
@@ -77,7 +93,7 @@ rain=prec(i,j,day,hour)/24;
 
 %SATURATION
 qhat=qsat(i,j,day,hour);
-vapor=cwv(i,j,day,hour);  %need cwv (not the index) inorder to apply condition on saturation
+vapor=cwv(i,j,day,hour);  %need cwv (not the index) in order to apply condition on saturation
 
 % BIN PRECIPITATION
 % check if data point is in region, Temp range and valid cwv range:
@@ -115,11 +131,11 @@ end  %end loop for day time increment
 end  %end loop for year
 
 % save and write out data to column format for plotting with gnuplot
-save('BINNED','BIN','QSH');
+save('./OUTPUT_BINNED_DATA/BINNED','BIN','QSH');
 
 
 % To plot with gnuplot need data in column ascii format.  
-% Below, writes out data as individual files for plotting and next analysis with gnuplot.
+% In next section, data written out as individual files for plotting and next analysis with gnuplot.
 
 %label regions:
 for(reg=1:4)
@@ -140,18 +156,19 @@ end
 % This writes two versions of the precip data.  
 % In gnuplot to plot with error bars, need separate file of data in 3 columns, 
 % so first file format is to plot with error bars.  Columns are cwv, ave Precip, and standard error.
-% Second file format is to do the main set of figures.  Columns are cwv, count, sum Precip, sum of squared Precip,
+% Second file format is to do the main set of figures.  Columns are cwv, count, sum Precip, 
+% sum of squared Precip,
 % number non-precipitating, and standard error.
 % Final file written is saturation binned by Temperature (count, sum)
 
 for(Ti=1:number_T_bins)
         Tbin=Ti+Toffset;
 % set up file name for plot of P(T,cwv) with error bars:
-filename1=sprintf('./GNUPLOTready/bin_%s_T%s_cwv_P_stderr.dat',region_name,num2str(Tbin));
+filename1=sprintf('../FIT_and_PLOT/GNUPLOTready%s_%s/bin_%s_T%s_cwv_P_stderr.dat',num2str(startyear),num2str(endyear),region_name,num2str(Tbin));
 save_id1=fopen(filename1,'w');
 
 % set up file name for set of standard plots:
-filename2=sprintf('./GNUPLOTready/bin_%s_T%s_cwv_num_sumP_sumpsq_numNoP_stderr.dat',region_name,num2str(Tbin));
+filename2=sprintf('../FIT_and_PLOT/GNUPLOTready%s_%s/bin_%s_T%s_cwv_num_sumP_sumpsq_numNoP_stderr.dat',num2str(startyear),num2str(endyear),region_name,num2str(Tbin));
 save_id2=fopen(filename2,'w');
 
 % write two files for each region and Temperature bin:
@@ -172,13 +189,13 @@ fclose(save_id2);
 end
 
 % saturation data:
-filename3=sprintf('./GNUPLOTready/QofT_%sCONDq60.dat',region);
+filename3=sprintf('../FIT_and_PLOT/GNUPLOTready%s_%s/QofT_%sCONDq60_T_QSH.dat',num2str(startyear),num2str(endyear),region_name);
 save_id3=fopen(filename3,'w');
 
 for(Ti=1:number_T_bins)
 if(QSH(reg,Ti,1)>0)
 Tbin=Ti+Toffset;
-  fprintf(save_id,'%f %f %f \n',Tbin,QSH(reg,Ti,1),QSH(reg,Ti,2));
+  fprintf(save_id3,'%f %f \n',Tbin,QSH(reg,Ti,2)/QSH(reg,Ti,1));
 end  %end if test >0
 end  %end loop over Tbin
 fclose(save_id3);
@@ -188,17 +205,6 @@ end  %end loop over regions
 % To be more automated, at this point could find the most populous temperature bin and select some range
 % around that value.  What seems sensible is to select a range of 2 less than the Temp-bin with the maximum 
 % count and 3 above, to have total of 6 temperature bins to plot.
-% For historical CCSM4 data, we looked at 6 bins, for the end of century data (rcp8.5), we tended to look at more, with 
+% For historical CCSM4 data, we looked at 6 temperature bins.  For the end of century data (rcp8.5), 
+% we tended to look at more temperature bins, with 
 % more on the lower end of the range to see overlap with temperature bins analysed in historical data.
-
-% per region
-BIN(reg,Ti,w,1) are the counts 
-will do for reg=1:4, but here just say for EPAC (reg=2)
-%add up over the cwv bins
-TempCountsEPac(Ti)=sum(BIN(2,Ti,:,1));
-%find the Ti with the highest count
-@find the doc for pulling out the index rather than the value...
-max(TempCountsEPac)
-
-% Then write out the values and other parameters for gnuplot to read... maybe for each region?
-startyear, endyear, TempCountMax
