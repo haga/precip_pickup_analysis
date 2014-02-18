@@ -117,4 +117,5 @@ set arrow from wc274Pmin,2.5 to wc274Pmax,6.0 as 6
 
 replot
 
+#'print_fit_values.gp' writes the calculated wc and a to ascii files for plotting scripts to access.
 load('print_fit_values.gp')
