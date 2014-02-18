@@ -14,7 +14,9 @@ yres=192
 
 % Read in regions.  This file specific to the resolution.  
 % Tropical ocean basins (20N-20S) 1-Western Pacific, 2-Eastern Pacific, 3-Atlantic, 4-Indian, 0-elsewhere
-load('./regions_288x192.mat' )
+load('./REGIONS_ccsm4_288x86.mat' )
+region=zeros(288,192);
+region(:,54:139)=regionLowRes;
 number_regions=4;
 
 % Set Range of Temperature bins: (We used range of 260 to 280 for both historical and end-of-century analysis)
@@ -131,7 +133,7 @@ end  %end loop for day time increment
 end  %end loop for year
 
 % save and write out data to column format for plotting with gnuplot
-save('./OUTPUT_BINNED_DATA/BINNED','BIN','QSH');
+save('./OUTPUT_BINNED_DATA','BIN','QSH');
 
 
 % To plot with gnuplot need data in column ascii format.  

@@ -24,11 +24,12 @@ The model output netcdf files are produced by script gen_6hrly.ncl
 (a copy included here for reference in directory PROCESS/INPUT_DATA, author: R.Neale).   
 In this version of the analysis, 
 the netcdf files (one variable, one year per file) are rewritten to MATLAB-format .mat 
-files before running the analysis script, so those datafiles 
-are included in PROCESS/INPUT_DATA/CCSM_MAT.  Can skip this step if modify binning script
+files before running the analysis script. Those datafiles 
+would be placed in PROCESS/INPUT_DATA/CCSM_MAT.  They are not included in this github repository since the
+files are very large.  If needed, can find another way to transfer the data files.  
+Also, can skip this step if modify binning script
 to read netcdf files directly.
 
-@@need to ssh the CCSM_MAT data to git.
 
 ***
 2) bin data
@@ -49,9 +50,6 @@ Bin.m will produce binned data in two formats: (1) matlab-format .mat file of th
 containing the binned data and (2) column ascii files formatted for analysis/plotting with 
 gnuplot (one file per region and temperature bin).
 
-@@need to ssh regions file to git. And find regions_288x192.mat file to 
-replace REGIONS_ccsm4_288x86.mat (same
-information in file, but had tidied up).
 
 ***
 3) quick look at data as needed
@@ -66,7 +64,7 @@ value, include 2 temperature-bins less than it and 4 greater than it as a genera
 ***
 The output of the binning (step 2) produces column ascii files ready for analysis/plotting with gnuplot 
 (they are in directory: FIT_and_PLOT/GNUPLOTready*timerange*/).  
-In directory FIT_and_PLOT, edit dataname, region and timerange settings in DATASETTINGS.gp.
+In file FIT_and_PLOT/DATASETTINGS.gp, edit dataname, region and timerange settings.
 The script calculate_fit.gp calculates 
 the least squares fit for precipitation as a function of column water vapor and temperature
 over the range of precipitation from 2.5mm/h to 6.0mm/h with a minimum
@@ -74,11 +72,12 @@ of 3 points and over a maximum range of CWV of 5mm [note, the minimum point requ
 case-by-case so far and is not currently coded in the script].
 
 The 'calculate_fit.gp' script saves the calculated critical values and 
-amplitudes into files in directory 'FIT_VALUES' (it loads script 'print_fit_values.gp') and also plots the 
+amplitudes into files in directory 'FIT_VALUES' (it runs script 'print_fit_values.gp') and also plots the 
 precipitation pickups and fits.
 
-An alternate fitting method is included in script @alternate_fit.gs.  This requires more consideration of 
-parameter selection on a case by case basis.  @This script needs more clean up.
+An alternate fitting method is included in script 'alternate_fit.gp'.  This method requires more consideration of 
+parameter selection on a case by case basis.  This script provides an example with explanation of alternate 
+method of calculating critical, slope, beta.
 
 ***
 5) plot figures
